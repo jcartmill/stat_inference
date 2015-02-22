@@ -1,0 +1,83 @@
+---
+title: "Tooth Growth Analysis"
+author: "John Cartmill"
+date: "February  2015"
+output: pdf_document
+---
+
+  
+##Exploratory Data Analysis   
+  
+```{r exploratory, echo=FALSE,warning=FALSE,fig.height=3.5,fig.width=6}
+library(ggplot2)
+ggplot(ToothGrowth, aes(x=as.factor(dose), y=len, fill=as.factor(dose)))+geom_boxplot()+facet_grid(.~supp)+ggtitle("ToothGrowth Data") + xlab("Dose (mg)") + ylab("Tooth length") + guides(fill=guide_legend(title="Dose"))
+ 
+
+g<-qplot(dose,len,data=ToothGrowth,facets= . ~ supp,geom=c("point","smooth"),method="loess")
+g <- g + labs(title="Tooth Growth Data")
+print(g)
+```
+
+##Summary of all data
+
+```{r summary_all, echo=FALSE,warning=FALSE}
+summary(ToothGrowth)
+```
+###Summary of tooth lengths for Orange Juice
+```{r summary_oj, echo=FALSE,warning=FALSE}
+summary(ToothGrowth[ToothGrowth$supp=="OJ",]$len)
+```
+###Summary of tooth lengths for Vitamin C 
+```{r summary-vc, echo=FALSE,warning=FALSE}
+summary(ToothGrowth[ToothGrowth$supp=="VC",]$len)
+```
+##Confidence levels by supplement with assumed equal variances
+```{r confidence_by_supp_equal, echo=FALSE,warning=FALSE}
+#confidence of VC versus OJ
+
+t.test(len ~ supp,data=ToothGrowth,paired=FALSE,var.equal=TRUE)
+```
+
+##Confidence levels by supplement with assumed unequal variances
+```{r confidence_by_supp_unequal, echo=FALSE,warning=FALSE}
+#confidence of VC versus OJ
+t.test(len ~ supp,data=ToothGrowth,paired=FALSE,var.equal=FALSE)
+```
+
+##Confidence levels by supplement by dose  
+A comparison of the confidence levels between Orange Juice and Vitamin C for each of the three dosage levels.
+Table 1.
+```{r confidence_by_supp_dose, echo=FALSE,warning=FALSE}
+OJ_VC_2<-t.test(len ~ supp,data=ToothGrowth[ToothGrowth$dose==2,],paired=FALSE,var.equal=TRUE)$conf
+OJ_VC_1<-t.test(len ~ supp,data=ToothGrowth[ToothGrowth$dose==1,],paired=FALSE,var.equal=TRUE)$conf
+OJ_VC_.5<-t.test(len ~ supp,data=ToothGrowth[ToothGrowth$dose==0.5,],paired=FALSE,var.equal=TRUE)$conf
+cbind(OJ_VC_2,OJ_VC_1,OJ_VC_.5)
+
+
+
+```
+##Confidence levels by dose
+This part of the analysis compares dosage levels (e.g. 2mg versus 1mg).
+
+```{r confidence_by_dose, echo=FALSE,warning=FALSE}
+#confidence of Increasing doses
+t.test(len ~ dose,data=ToothGrowth[ToothGrowth$dose!=.5,],paired=FALSE,var.equal=TRUE)
+t.test(len ~ dose,data=ToothGrowth[ToothGrowth$dose != 1,],paired=FALSE,var.equal=TRUE)
+t.test(len ~ dose,data=ToothGrowth[ToothGrowth$dose != 2,],paired=FALSE,var.equal=TRUE)
+
+
+```
+
+##Conclusions
+For the overall data set the 95% confidence levels included 0 so the null hypothesis, that there was no true difference in overall means, could not be ruled out (p value 0.06). The comparison with the variances assumed equal was very close to the confidence levels with unequal variances.
+  
+However, for the lower dosage levels (0.5 mg and 1.0mg) the differences in the means between Orange Juice and Vitamin C were statistically significant as shown by the confidence levels in Table 1.   
+  
+For all of the dosage comparisons the the higher dosage resulted in larger tooth growth.
+
+**Assumptions:** Throughout this analysis the data were assumed to unpaired. Except for the analysis of the confidence levels for differences in supplements overall the underling variances of the samples were assumed to be equal.
+  
+
+
+
+

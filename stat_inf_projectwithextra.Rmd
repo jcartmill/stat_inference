@@ -1,0 +1,139 @@
+---
+title: "Estimating Properties of the Exponential Distribution from Random Samples"
+author: "John Cartmill"
+date: "February 2014"
+output: 
+        pdf_document:
+                fig_caption: true
+
+---
+
+
+### Overview  
+This paper will use **R** statistical package to apply the principles of the Central Limit Theorem to the exponential distribution to estimate the mean of the distribution.  
+The exponential distribution with rate $lambda (\lambda)$ has density: 
+$$ f(x) = \lambda e^{-\lambda x} for x \geq 0. $$  The mean value of the distribution is given by 1/\(\lambda\). The standard deviation, \(\sigma\), is also 1/\(\lambda\).  
+
+
+
+```{r, echo=FALSE,warning=FALSE}
+library(ggplot2)
+library(xtable)
+summaryfunction= function (x){
+  if( is.numeric(x)!=TRUE) {stop("Supplied X is not numeric")}
+  mysummary = data.frame(
+            "Min." =as.numeric( min(x)),
+            "1st Qu." = quantile(x)[2],
+            "Median" = median(x),
+            "Mean" = mean(x),
+            "3rd Qu." = quantile(x)[4],
+            "Max." = max(x),
+            row.names=""
+              
+            )
+  names(mysummary) = c("Min.","1st Qu.","Median","Mean","3rd Qu.","Max.")
+  return( mysummary )
+  }
+```
+
+```{r exp_dist, echo=FALSE, fig.height=3, fig.width=6,fig.cap="The exponential distribution for two values of lambda"}
+k <- 1000
+xvals <- seq(-1, 20, length = k)
+myplot <- function(lambda) {
+d <- data.frame(y = c(dexp(xvals,lambda ),dexp(xvals, lambda*2)),
+x = xvals,dist = factor(rep(c(as.character(lambda), as.character(lambda * 2)), c(k,k))))
+g <- ggplot(d, aes(x = x, y = y)) 
+#g<- g + ggtitle("Exponential Distribution")
+ g <- g + geom_line(size = 1, aes(colour = dist))+theme_classic(base_size=12) 
+g<- g + scale_colour_discrete(name  ="lambda")
+g <- g + theme(axis.title.x = element_text( colour="#000000", size=14),axis.text.x  = element_text(angle=90, vjust=0.5, size=16))
+ g <- g + theme(axis.title.y = element_text( colour="#000000", size=14),axis.text.y  = element_text(angle=00, vjust=0.5, size=16)) + ylab("f(x)")
+g<- g + annotate("text", x = 7.5, y = dexp(5,0.2)*1.1, label = "mean = 5",colour = "#8080FF")
+g<- g +  annotate("segment", x = 5, xend = 5, y = -0.01, yend = dexp(5,0.2),colour = "#8080FF", size=1.0,linetype="twodash")
+g<- g + annotate("text", x = 12.5, y = dexp(10,0.1)*1.2, label = "mean = 10",colour = "#FF8080")
+g<- g +  annotate("segment", x = 10, xend = 10, y = -0.01, yend = dexp(10,0.1), colour = "#FF8080", size=1.0,linetype="twodash")
+
+g
+}
+myplot(0.1)
+```
+  
+In this paper all of the calculations were performed with  \(\lambda\) = 0.2.
+For this choice of \(\lambda\) the mean is 5 and the variance(\(\sigma^2\)) is 25. To estimate the mean, 1000 sets of 40 samples were used.  
+
+Here is the basic **R** code or the used to generate the sample sets:  
+set.seed(7880)  
+for (i in 1 : 1000) {  
+        mns = c(mns, mean(rexp(40,0.2)))  
+}  
+
+### Estimating the mean   
+The theoretical mean for this distrbution is 5. Figure 2 shows the distribution of the estimate of the mean from 1000 random draws of 40 exponetials. Table 1 give the summary statistics for these data. The median and mean value of these iid samples are close to the theoretical value, 5.00 and 5.02 respectively.  
+  
+```{r mean_estimate, echo=FALSE,fig.height=3.0, fig.width=4, fig.cap="Distribution of means of 1000\n random draws of 40 exponentials"}
+
+mns = NULL
+vrs = NULL
+bins= NULL
+bins2 = NULL
+bins5 = NULL
+set.seed(7880)
+for (i in 1 : 1000) {
+        tmp<-rexp(40,0.2)
+        mns = c(mns, mean(tmp))
+        vrs =c(vrs,var(tmp))
+        bins = c(bins,ceiling((i)/100))
+        bins2 = c(bins2,ceiling((i)/200))
+        bins5 = c(bins5,ceiling((i)/500))
+                 }
+df<-data.frame(mns,bins,bins2,bins5)
+hp <-ggplot(df, aes(x=mns)) + geom_histogram(binwidth=.2, colour="black", fill="#A0A0A0") + geom_vline(aes(xintercept=mean(mns)),   
+               color="#FF8080", linetype="dashed", size=0.5)+ geom_vline(xintercept=5.0,color="blue", linetype="dashed", size=1)
+hp <- hp + theme_light(base_size = 12, base_family = "Helvetica") + xlab("Means") +ggtitle("1000\n random draws of 40 exponentials")
+hp
+
+```
+```{r mean_sum, results='asis',echo=FALSE}
+#summary(mns)
+print(xtable(summaryfunction(mns),caption="Summary table of means"),comment=FALSE)
+
+```
+```{r var_estimate, echo=FALSE,fig.height=3.0, fig.width=4, fig.cap="Distribution of 1000\n random draws of 40 exponentials"}
+df<-data.frame(vrs)
+hp <-ggplot(df, aes(x=vrs)) + geom_histogram(binwidth=5, colour="black", fill="#A0A0A0") + geom_vline(aes(xintercept=mean(vrs)),   
+               color="#FF8080", linetype="dashed", size=0.5)+ geom_vline(xintercept=25.0,color="blue", linetype="dashed", size=1)
+hp <- hp + theme_light(base_size = 12, base_family = "Helvetica") + xlab("Variances") +ggtitle("Distribution of Variances of 1000\n random draws of 40 exponentials")
+hp
+```
+```{r var_sum, results='asis',echo=FALSE}
+#summary(mns)
+print(xtable(summaryfunction(vrs),caption="Summary table of variances"),comment=FALSE)
+```
+
+  
+##Distribution  
+
+```{r norm_estimate, echo=FALSE,fig.height=3.5, fig.width=4, fig.cap="Distribution of 1000\n random draws of 40 exponentials"}
+df<-data.frame(mns)
+hp <-ggplot(df, aes(x=mns-5)) + geom_histogram(binwidth=.2, colour="black", fill="#A0A0A0") + geom_vline(aes(xintercept=mean(mns-5)),   
+               color="#FF8080", linetype="dashed", size=0.5)+ geom_vline(xintercept=5.0,color="blue", linetype="dashed", size=1)
+hp<-
+hp <- hp + theme_light(base_size = 12, base_family = "Helvetica") + xlab("Means") +ggtitle("1000\n random draws of 40 exponentials")
+hp<- hp + stat_function(fun = dnorm, size = 2)
+hp
+
+```
+```{r, echo=FALSE,fig.cap="Variabilty of the mean", fig.height=3}
+cE<-cumsum(mns)
+
+cP<-cE[1:1000]/seq_len(1000)
+qplot(seq_len(1000),cP,xlab="Number of Averages",ylab="Estimate of the mean")
+```
+The **R** Code listing for this analysis can be found here:
+
+```{r binned_mean_estimate, echo=FALSE,fig.cap=" Five distributions of 200 random draws of 40 exponentials"}
+#mp <- ggplot(df, aes(x=mns)) + geom_histogram(binwidth=.2, colour="black", fill="yellow") + geom_vline(aes(xintercept=mean(mns)),   
+#               color="red", linetype="dashed", size=1)+ geom_vline(xintercept=5.0,color="blue", linetype="dashed", size=1)
+#gp <- mp + facet_grid(. ~ bins2)
+#gp
+```
